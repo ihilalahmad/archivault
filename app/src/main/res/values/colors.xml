@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#0B959F</color>
+    <color name="colorPrimaryDark">#09858E</color>
+    <color name="colorAccent">#D81B60</color>
+
+    <color name="app_background_color">#DBDBDB</color>
+    <color name="cardview_color">#0B959F</color>
+    <color name="cardview_btn_color">#09858E</color>
+    <color name="color_card">#E5E5E5</color>
+    <color name="income_card_color">#47C44B</color>
+    <color name="expense_card_color">#C46547</color>
+    <color name="disable_color">#8F8F8F</color>
+
+    <color name="color_black">#000000</color>
+    <color name="color_white">#ffffff</color>
+
+</resources>
