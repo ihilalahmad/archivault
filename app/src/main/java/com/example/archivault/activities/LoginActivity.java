@@ -112,9 +112,9 @@ public class LoginActivity extends AppCompatActivity {
 
                             JSONObject jsonObject = new JSONObject(response);
 
-//                            int success_message = jsonObject.getInt("success");
+                            int success_message = jsonObject.getInt("success");
 
-//                            if (success_message == 1) {
+                            if (success_message == 1) {
 
                                 String access_token = jsonObject.getString("access_token");
                                 String token_type = jsonObject.getString("token_type");
@@ -123,21 +123,18 @@ public class LoginActivity extends AppCompatActivity {
 
                                 Log.i("SSAToken",   access_token);
 
-                                if (access_token != null){
-
                                     login_progressBar.setVisibility(View.GONE);
                                     finish();
                                     startActivity(new Intent(LoginActivity.this,MainActivity.class));
-                                }
 
 
 
-//                            }else if (success_message == 0){
-//
-//                                login_progressBar.setVisibility(View.GONE);
-//                                String loginErrMsg = jsonObject.getString("message");
-//                                Toast.makeText(LoginActivity.this,loginErrMsg,Toast.LENGTH_SHORT).show();
-//                            }
+                            }else if (success_message == 0){
+
+                                login_progressBar.setVisibility(View.GONE);
+                                String loginErrMsg = jsonObject.getString("message");
+                                Toast.makeText(LoginActivity.this,loginErrMsg,Toast.LENGTH_SHORT).show();
+                            }
 
                         } catch (JSONException e) {
                             e.printStackTrace();
