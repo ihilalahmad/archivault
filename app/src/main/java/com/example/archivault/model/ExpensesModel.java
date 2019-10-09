@@ -2,32 +2,45 @@ package com.example.archivault.model;
 
 public class ExpensesModel {
 
-    private String expense_by_user;
-    private String expense_reason;
-    private String expense_date;
-    private String total_expense;
+    private String id;
+    private String title_summary;
+    private String username_summary;
+    private String date_summary;
+    private String total_amount_summary;
+    private String item_quantity;
 
 
-    public ExpensesModel(String expense_by_user, String expense_reason, String expense_date, String total_expense) {
-        this.expense_by_user = expense_by_user;
-        this.expense_reason = expense_reason;
-        this.expense_date = expense_date;
-        this.total_expense = total_expense;
+    public ExpensesModel(String id, String title_summary, String username_summary, String date_summary, String total_amount_summary, String item_quantity) {
+        this.id = id;
+        this.title_summary = title_summary;
+        this.username_summary = username_summary;
+        this.date_summary = date_summary;
+        this.total_amount_summary = total_amount_summary;
+        this.item_quantity = item_quantity;
     }
 
-    public String getExpense_by_user() {
-        return expense_by_user;
+    public String getId() {
+        return id;
     }
 
-    public String getExpense_reason() {
-        return expense_reason;
+    public String getTitle_summary() {
+        return title_summary;
     }
 
-    public String getExpense_date() {
-        return expense_date;
+    public String getUsername_summary() {
+        return username_summary;
     }
 
-    public String getTotal_expense() {
-        return total_expense;
+    public String getDate_summary() {
+        return date_summary;
+    }
+
+    public String getTotal_amount_summary() {
+        return total_amount_summary;
+    }
+
+    public String getItem_quantity(){
+
+        return item_quantity;
     }
 }

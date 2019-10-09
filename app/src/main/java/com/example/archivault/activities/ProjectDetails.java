@@ -1,6 +1,7 @@
 package com.example.archivault.activities;
 
 import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -9,14 +10,19 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
-import android.view.animation.OvershootInterpolator;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -27,39 +33,36 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.example.archivault.R;
-import com.example.archivault.adapters.ProjectsAdapter;
-import com.example.archivault.adapters.ProjectsSummaryAdapter;
-import com.example.archivault.model.ProjectModel;
+import com.example.archivault.adapters.IncomesAdapter;
+import com.example.archivault.adapters.ExpensesAdapter;
+import com.example.archivault.model.ExpensesModel;
+import com.example.archivault.model.IncomesModel;
 import com.example.archivault.model.ProjectsSummaryModel;
-import com.example.archivault.model.SummaryModel;
 import com.example.archivault.model.Users;
 import com.example.archivault.patterns.MySingleton;
 import com.example.archivault.utils.Config;
 import com.example.archivault.utils.SharedPrefManager;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.github.clans.fab.FloatingActionButton;
+import com.github.clans.fab.FloatingActionMenu;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ProjectDetails extends AppCompatActivity implements View.OnClickListener {
+public class ProjectDetails extends AppCompatActivity {
 
     Toolbar toolbar;
 
-    FloatingActionButton fab_main;
+    FloatingActionMenu floatingActionMenu;
     FloatingActionButton fab_add_income;
     FloatingActionButton fab_add_expense;
-    Float translationY = 100f;
-    OvershootInterpolator interpolator = new OvershootInterpolator();
-    private static final String TAG = "MainActivity";
+    FloatingActionButton fab_add_item_expense;
 
-    Boolean isMenuOpen = false;
 
     TextView tv_total_balance;
     TextView tv_income;
@@ -68,16 +71,16 @@ public class ProjectDetails extends AppCompatActivity implements View.OnClickLis
     TextView toggle_expense;
     TextView tv_project_name;
 
-    String total_balance;
-    String income;
-    String expense;
-
 
     List<ProjectsSummaryModel> projectsSummaryList;
-    List<SummaryModel> summaryList;
+    List<ExpensesModel> expensesList;
+    List<IncomesModel> incomesList;
+    List<String> itemList;
+    private JSONArray itemsJsonArry;
 
     RecyclerView mRecyclerView;
-    ProjectsSummaryAdapter mAdapter;
+    ExpensesAdapter mAdapter;
+    IncomesAdapter incomesAdapter;
     Context mContext;
 
     Dialog mDialog;
@@ -87,11 +90,16 @@ public class ProjectDetails extends AppCompatActivity implements View.OnClickLis
 
     private ProgressDialog mProgressDialog;
 
+    private ExpensesAdapter.OnItemClickListener expenseListener;
+    private IncomesAdapter.OnItemClickListener incomesListener;
+    boolean isIncome;
+
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_project_details);
+
 
         mContext = this;
 
@@ -100,16 +108,19 @@ public class ProjectDetails extends AppCompatActivity implements View.OnClickLis
 
         getExtras();
 
-        Log.i("ProjectIdFromIntent", project_id + " " + project_name);
-
-        //FAB init.
-        initFabMenu();
+        mRecyclerView = findViewById(R.id.project_details_recycleView);
+        mRecyclerView.invalidate();
+        mRecyclerView.setHasFixedSize(true);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
+        layoutManager.setReverseLayout(true);
+        layoutManager.setStackFromEnd(true);
+        mRecyclerView.setLayoutManager(layoutManager);
 
         mDialog = new Dialog(this);
 
         //initializing lists
         projectsSummaryList = new ArrayList<>();
-        summaryList = new ArrayList<>();
+        itemList = new ArrayList<>();
 
         //initializing textviews and toggle buttons
         tv_total_balance = findViewById(R.id.tv_total_balance);
@@ -121,37 +132,60 @@ public class ProjectDetails extends AppCompatActivity implements View.OnClickLis
 
         tv_project_name.setText(project_name);
 
+
+        //implementing floating buttons.
+        floatingActionMenu = findViewById(R.id.floating_action_menu);
+        fab_add_income = findViewById(R.id.fab_add_income);
+        fab_add_expense = findViewById(R.id.fab_add_expense);
+        fab_add_item_expense = findViewById(R.id.fab_add_item_expense);
+
+        fab_add_income.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                floatingActionMenu.close(true);
+                showIncomePopup();
+            }
+        });
+
+        fab_add_expense.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                floatingActionMenu.close(true);
+                showExpensePopup();
+            }
+        });
+
+        fab_add_item_expense.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                floatingActionMenu.close(true);
+                showItemExpensePopup();
+            }
+        });
+
+
         //implementing toggle onClicks
         toggle_income.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                toggle_income.setTextColor(getResources().getColor(R.color.colorPrimaryDark));
-//                toggle_expense.setTextColor(getResources().getColor(R.color.disable_color));
 
                 getIncomeSummary();
-                initViews();
+//                initViews();
             }
         });
         toggle_expense.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                toggle_expense.setTextColor(getResources().getColor(R.color.colorPrimaryDark));
-//                toggle_income.setTextColor(getResources().getColor(R.color.disable_color));
 
                 getExpenseSummary();
-                initViews();
+//                initViews();
             }
         });
 
         getTotalSummary();
         getIncomeSummary();
-
-        mRecyclerView = findViewById(R.id.project_details_recycleView);
-        mRecyclerView.invalidate();
-        mRecyclerView.setHasFixedSize(true);
-        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
-        mRecyclerView.setLayoutManager(layoutManager);
-
+        getItems();
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -159,6 +193,10 @@ public class ProjectDetails extends AppCompatActivity implements View.OnClickLis
 
         toolbar.setTitle("Project Summary");
         setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
     }
 
     private void getExtras() {
@@ -167,72 +205,8 @@ public class ProjectDetails extends AppCompatActivity implements View.OnClickLis
         project_name = getIntent().getExtras().getString("project_name");
     }
 
-    //FAB Buttons
-    private void initFabMenu() {
 
-        fab_main = findViewById(R.id.fab_main);
-        fab_add_income = findViewById(R.id.fab_add_income);
-        fab_add_expense = findViewById(R.id.fab_add_expense);
-
-        fab_add_income.setAlpha(0f);
-        fab_add_expense.setAlpha(0f);
-
-        fab_add_income.setTranslationY(translationY);
-        fab_add_expense.setTranslationY(translationY);
-
-        fab_main.setOnClickListener(this);
-        fab_add_income.setOnClickListener(this);
-        fab_add_expense.setOnClickListener(this);
-    }
-
-    private void openMenu() {
-
-        isMenuOpen = !isMenuOpen;
-
-        fab_main.animate().setInterpolator(interpolator).rotation(45f).setDuration(300).start();
-
-        fab_add_income.animate().translationY(0f).alpha(1f).setInterpolator(interpolator).setDuration(300).start();
-        fab_add_expense.animate().translationY(0f).alpha(1f).setInterpolator(interpolator).setDuration(300).start();
-    }
-
-    private void closeMenu() {
-
-        isMenuOpen = !isMenuOpen;
-
-        fab_main.animate().setInterpolator(interpolator).rotation(0f).setDuration(300).start();
-
-        fab_add_income.animate().translationY(translationY).alpha(0f).setInterpolator(interpolator).setDuration(300).start();
-        fab_add_expense.animate().translationY(translationY).alpha(0f).setInterpolator(interpolator).setDuration(300).start();
-
-    }
-
-    //implementing FAB click actions.
-    @Override
-    public void onClick(View view) {
-
-        switch (view.getId()) {
-
-            case R.id.fab_main:
-                Log.i(TAG, "onClick: fab main");
-                if (isMenuOpen) {
-                    closeMenu();
-                } else {
-                    openMenu();
-                }
-                break;
-
-            case R.id.fab_add_income:
-                Log.i(TAG, "onClick: add income");
-                showIncomePopup();
-                break;
-
-            case R.id.fab_add_expense:
-                Log.i(TAG, "onClick: add expense");
-                showExpensePopup();
-                break;
-        }
-    }
-
+    //Dialog popups
     private void showIncomePopup() {
 
         TextView close_popup;
@@ -275,81 +249,12 @@ public class ProjectDetails extends AppCompatActivity implements View.OnClickLis
                     return;
                 }
                 addNewIncome(title, amount, project_id);
-                getIncomeSummary();
-                getTotalSummary();
-
             }
         });
 
         mDialog.setCancelable(false);
         mDialog.show();
 
-    }
-
-    private void addNewIncome(final String title, final String amount, final String projectID){
-
-        StringRequest addIncomeRequest = new StringRequest(Request.Method.POST, Config.ADD_NEW_INCOME, new Response.Listener<String>() {
-            @Override
-            public void onResponse(String response) {
-
-                Log.i("Check", response);
-
-                try {
-
-                    JSONObject obj = new JSONObject(response);
-
-                    if (obj.optString("success").equals("1")){
-
-                        String success_messge = obj.getString("message");
-                        Toast.makeText(ProjectDetails.this, success_messge, Toast.LENGTH_SHORT).show();
-                        Log.i("SSARegRes",success_messge);
-                        mAdapter.notifyDataSetChanged();
-                        mDialog.dismiss();
-
-                    }else if (obj.optString("success").equals("0")){
-
-                        String error_messge = obj.getString("message");
-                        Toast.makeText(ProjectDetails.this, error_messge, Toast.LENGTH_SHORT).show();
-                        Log.i("SSARegResErr",error_messge);
-                    }
-
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Toast.makeText(ProjectDetails.this, error.getMessage(), Toast.LENGTH_SHORT).show();
-                Log.e("SSA SignUp ERR", error.getMessage());
-            }
-        }){
-
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
-                Users users = SharedPrefManager.getInstance(getApplicationContext()).getUser();
-                String token_type = users.getToken_type();
-                String access_token = users.getUser_token();
-
-                Log.i("TokenFromModelSummary",token_type+" "+access_token);
-
-                Map<String, String> params = new HashMap<String, String>();
-                params.put("Authorization",token_type+" "+access_token);
-                return params;
-            }
-
-            @Override
-            protected Map<String, String> getParams() throws AuthFailureError {
-                Map<String, String> params = new HashMap<String, String>();
-                params.put("title", title);
-                params.put("amount", amount);
-                params.put("project_id", projectID);
-
-                return params;
-            }
-        };
-        MySingleton.getInstance(this).addToRequestQueue(addIncomeRequest);
     }
 
     private void showExpensePopup() {
@@ -380,7 +285,7 @@ public class ProjectDetails extends AppCompatActivity implements View.OnClickLis
                 String title = et_reason.getText().toString();
                 String amount = et_amount.getText().toString();
 
-                Log.i("addingNewsIncome", project_id+ " " +title +" " +amount);
+                Log.i("addingNewsExpense", project_id+ " " +title +" " +amount);
 
                 if (TextUtils.isEmpty(title)){
                     et_reason.setError("Please enter reason");
@@ -394,8 +299,6 @@ public class ProjectDetails extends AppCompatActivity implements View.OnClickLis
                     return;
                 }
                 addNewExpense(title, amount, project_id);
-                getExpenseSummary();
-                getTotalSummary();
             }
         });
 
@@ -403,9 +306,84 @@ public class ProjectDetails extends AppCompatActivity implements View.OnClickLis
         mDialog.show();
     }
 
-    private void addNewExpense(final String title, final String amount, final String projectID){
+    private void showItemExpensePopup(){
 
-        StringRequest addIncomeRequest = new StringRequest(Request.Method.POST, Config.ADD_NEW_EXPENSE, new Response.Listener<String>() {
+        TextView close_popup;
+        Spinner item_expense_spinner;
+        final EditText et_amount;
+        final EditText et_item_quantity;
+        Button btn_add_item_expense;
+        mDialog.setContentView(R.layout.add_item_expense_popupwindow);
+
+        close_popup = mDialog.findViewById(R.id.close_popup);
+        item_expense_spinner = mDialog.findViewById(R.id.item_expense_spinner);
+        et_amount = mDialog.findViewById(R.id.et_item_expense_amount);
+        et_item_quantity = mDialog.findViewById(R.id.et_item_expense_quantity);
+        btn_add_item_expense = mDialog.findViewById(R.id.btn_add_item_expense);
+
+        close_popup.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                mDialog.dismiss();
+            }
+        });
+
+       final List<String> item_id = new ArrayList<>();
+
+        item_expense_spinner.setAdapter(new ArrayAdapter<>(ProjectDetails.this, android.R.layout.simple_spinner_dropdown_item, itemList));
+
+        item_expense_spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int position, long l) {
+
+                item_id.clear();
+                item_id.add(getItemId(position));
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+        });
+
+        btn_add_item_expense.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                String id = item_id.get(0);
+                String amount = et_amount.getText().toString();
+                String item_quantity = et_item_quantity.getText().toString();
+                Log.i("ArchiItemClickon", id);
+
+                if (TextUtils.isEmpty(item_quantity)){
+
+                    et_item_quantity.setError("Please enter quantity");
+                    et_item_quantity.requestFocus();
+
+                    return;
+                }
+
+                if (TextUtils.isEmpty(amount)){
+                    et_amount.setError("Please enter reason");
+                    et_amount.requestFocus();
+
+                    return;
+                }
+
+                addNewItemExpense(amount,project_id,id,item_quantity);
+            }
+        });
+
+        mDialog.setCancelable(false);
+        mDialog.show();
+    }
+
+
+    //sending data to Api.
+    private void addNewIncome(final String title, final String amount, final String projectID){
+
+        StringRequest addIncomeRequest = new StringRequest(Request.Method.POST, Config.ADD_NEW_INCOME, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
 
@@ -420,7 +398,8 @@ public class ProjectDetails extends AppCompatActivity implements View.OnClickLis
                         String success_messge = obj.getString("message");
                         Toast.makeText(ProjectDetails.this, success_messge, Toast.LENGTH_SHORT).show();
                         Log.i("SSARegRes",success_messge);
-                        mAdapter.notifyDataSetChanged();
+                        getTotalSummary();
+                        getIncomeSummary();
                         mDialog.dismiss();
 
                     }else if (obj.optString("success").equals("0")){
@@ -469,14 +448,140 @@ public class ProjectDetails extends AppCompatActivity implements View.OnClickLis
         MySingleton.getInstance(this).addToRequestQueue(addIncomeRequest);
     }
 
-    //Getting data from Api's.
-    private void initViews() {
+    private void addNewExpense(final String title, final String amount, final String projectID){
 
-        mRecyclerView = findViewById(R.id.project_details_recycleView);
-        mRecyclerView.invalidate();
-        mRecyclerView.setHasFixedSize(true);
-        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
-        mRecyclerView.setLayoutManager(layoutManager);
+        StringRequest addIncomeRequest = new StringRequest(Request.Method.POST, Config.ADD_NEW_EXPENSE, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+
+                Log.i("Check", response);
+
+                try {
+
+                    JSONObject obj = new JSONObject(response);
+
+                    if (obj.optString("success").equals("1")){
+
+                        String success_messge = obj.getString("message");
+                        Toast.makeText(ProjectDetails.this, success_messge, Toast.LENGTH_SHORT).show();
+                        Log.i("SSARegRes",success_messge);
+                        getTotalSummary();
+                        getExpenseSummary();
+                        mDialog.dismiss();
+
+                    }else if (obj.optString("success").equals("0")){
+
+                        String error_messge = obj.getString("message");
+                        Toast.makeText(ProjectDetails.this, error_messge, Toast.LENGTH_SHORT).show();
+                        Log.i("SSARegResErr",error_messge);
+                    }
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Toast.makeText(ProjectDetails.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                Log.e("SSA SignUp ERR", error.getMessage());
+            }
+        }){
+
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Users users = SharedPrefManager.getInstance(getApplicationContext()).getUser();
+                String token_type = users.getToken_type();
+                String access_token = users.getUser_token();
+
+                Log.i("TokenFromModelSummary",token_type+" "+access_token);
+
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("Authorization",token_type+" "+access_token);
+                return params;
+            }
+
+            @Override
+            protected Map<String, String> getParams() throws AuthFailureError {
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("title", title);
+                params.put("amount", amount);
+                params.put("project_id", projectID);
+
+                return params;
+            }
+        };
+        MySingleton.getInstance(this).addToRequestQueue(addIncomeRequest);
+    }
+
+    private void addNewItemExpense(final String amount, final String projectId, final String itemId, final String item_quantity){
+
+        StringRequest addNewItemExpense = new StringRequest(Request.Method.POST, Config.ADD_NEW_ITEM_EXPENSE, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+
+                Log.i("Check", response);
+
+                try {
+
+                    JSONObject obj = new JSONObject(response);
+
+                    if (obj.optString("success").equals("1")){
+
+                        String success_messge = obj.getString("message");
+                        Toast.makeText(ProjectDetails.this, success_messge, Toast.LENGTH_SHORT).show();
+                        Log.i("SSARegRes",success_messge);
+                        getTotalSummary();
+                        getExpenseSummary();
+                        mDialog.dismiss();
+
+                    }else if (obj.optString("success").equals("0")){
+
+                        String error_messge = obj.getString("message");
+                        Toast.makeText(ProjectDetails.this, error_messge, Toast.LENGTH_SHORT).show();
+                        Log.i("SSARegResErr",error_messge);
+                    }
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Toast.makeText(ProjectDetails.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                Log.e("SSA SignUp ERR", error.getMessage());
+            }
+        }){
+
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Users users = SharedPrefManager.getInstance(getApplicationContext()).getUser();
+                String token_type = users.getToken_type();
+                String access_token = users.getUser_token();
+
+                Log.i("TokenFromModelSummary",token_type+" "+access_token);
+
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("Authorization",token_type+" "+access_token);
+                return params;
+            }
+
+            @Override
+            protected Map<String, String> getParams() throws AuthFailureError {
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("amount", amount);
+                params.put("project_id", projectId);
+                params.put("item_id", itemId);
+                params.put("quantity", item_quantity);
+
+                return params;
+            }
+        };
+        MySingleton.getInstance(this).addToRequestQueue(addNewItemExpense);
+
     }
 
     private void getTotalSummary() {
@@ -515,8 +620,8 @@ public class ProjectDetails extends AppCompatActivity implements View.OnClickLis
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-//                       mProgressDialog.dismiss();
-                       Toast.makeText(getApplicationContext(), (CharSequence) error, Toast.LENGTH_SHORT).show();
+                       mProgressDialog.dismiss();
+                       Toast.makeText(getApplicationContext(), error.getMessage(), Toast.LENGTH_SHORT).show();
                     }
                 }){
 
@@ -540,7 +645,9 @@ public class ProjectDetails extends AppCompatActivity implements View.OnClickLis
 
     private void getIncomeSummary() {
 
-        summaryList.clear();
+        incomesList = new ArrayList<>();
+
+        isIncome = true;
         toggle_income.setTextColor(getResources().getColor(R.color.colorPrimaryDark));
         toggle_expense.setTextColor(getResources().getColor(R.color.disable_color));
 
@@ -549,7 +656,7 @@ public class ProjectDetails extends AppCompatActivity implements View.OnClickLis
         mProgressDialog.setCanceledOnTouchOutside(false);
         mProgressDialog.show();
 
-        StringRequest incomeRequest = new StringRequest(Request.Method.GET, Config.INCOMES_URL+project_id, new Response.Listener<String>() {
+        final StringRequest incomeRequest = new StringRequest(Request.Method.GET, Config.INCOMES_URL+project_id, new Response.Listener<String>() {
             @Override
             public void onResponse(String response) {
 
@@ -559,10 +666,17 @@ public class ProjectDetails extends AppCompatActivity implements View.OnClickLis
 
                     JSONArray projectsArray = obj.getJSONArray("data");
 
+                    if (projectsArray.length()==0){
+
+                        Toast.makeText(getApplicationContext(), "No Incomes to Show", Toast.LENGTH_SHORT).show();
+                        mProgressDialog.dismiss();
+                    }
+
                     for (int i=0; i<projectsArray.length(); i++){
 
                         JSONObject projectsObj = projectsArray.getJSONObject(i);
 
+                        String id = projectsObj.getString("id");
                        String title = projectsObj.getString("comment");
                        String user = projectsObj.getString("added_by");
                        String date = projectsObj.getString("date");
@@ -570,16 +684,15 @@ public class ProjectDetails extends AppCompatActivity implements View.OnClickLis
 
                        Log.i("IncomeSummary", user +" " + total_amount);
 
-                        SummaryModel summaryModel = new SummaryModel(title,user,date,total_amount);
-                        summaryList.add(summaryModel);
-//                        mAdapter.notifyDataSetChanged();
+                       IncomesModel incomes = new IncomesModel(id,user,title,date,total_amount);
+                       incomesList.add(incomes);
                         mProgressDialog.dismiss();
                     }
-                    mAdapter = new ProjectsSummaryAdapter(summaryList, mContext);
-                    mRecyclerView.setAdapter(mAdapter);
+                    incomesAdapter = new IncomesAdapter(incomesList,mContext,incomesListener);
+                    mRecyclerView.setAdapter(incomesAdapter);
 
                 } catch (JSONException e) {
-                    e.printStackTrace();
+                    Log.i("IncomeSummaryErr", e.getMessage());
                 }
 
             }
@@ -611,7 +724,9 @@ public class ProjectDetails extends AppCompatActivity implements View.OnClickLis
 
     private void getExpenseSummary() {
 
-        summaryList.clear();
+        expensesList = new ArrayList<>();
+
+        isIncome = false;
         toggle_expense.setTextColor(getResources().getColor(R.color.colorPrimaryDark));
         toggle_income.setTextColor(getResources().getColor(R.color.disable_color));
 
@@ -630,24 +745,38 @@ public class ProjectDetails extends AppCompatActivity implements View.OnClickLis
 
                     JSONArray projectsArray = obj.getJSONArray("data");
 
+                    if (projectsArray.length()==0){
+                        Toast.makeText(getApplicationContext(), "No Expenses to Show", Toast.LENGTH_SHORT).show();
+                        mProgressDialog.dismiss();
+                    }
+
                     for (int i=0; i<projectsArray.length(); i++){
 
                         JSONObject projectsObj = projectsArray.getJSONObject(i);
 
-                        String title = projectsObj.getString("comment");
+                        String title;
+                        //check if its item from dropdown or comment in response.
+                        if (projectsObj.optString("item_name").equals("0")){
+                            title = projectsObj.getString("comment");
+                        } else {
+                            title = projectsObj.getString("item_name");
+                        }
+
+                        String id = projectsObj.getString("id");
                         String user = projectsObj.getString("added_by");
                         String date = projectsObj.getString("date");
                         String total_amount = projectsObj.getString("amount");
+                        String quantity = projectsObj.getString("quantity");
 
-                        Log.i("IncomeSummary", user +" " + total_amount);
+                        Log.i("ExpenseSummary", user +" " + title + " "+ total_amount);
 
-                        SummaryModel summaryModel = new SummaryModel(title,user,date,total_amount);
-                        summaryList.add(summaryModel);
+                        ExpensesModel expensesModel = new ExpensesModel(id,title,user,date,total_amount, quantity);
+                        expensesList.add(expensesModel);
 
                         mProgressDialog.dismiss();
 
                     }
-                    mAdapter = new ProjectsSummaryAdapter(summaryList, mContext);
+                    mAdapter = new ExpensesAdapter(expensesList, mContext, expenseListener);
                     mRecyclerView.setAdapter(mAdapter);
 
 
@@ -679,10 +808,255 @@ public class ProjectDetails extends AppCompatActivity implements View.OnClickLis
             }
         };
         MySingleton.getInstance(this).addToRequestQueue(expensesRequest);
+
+        expenseListener = new ExpensesAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(final ExpensesModel expensesModel) {
+
+                new AlertDialog.Builder(ProjectDetails.this)
+                        .setTitle("Confirm Delete")
+                        .setMessage("Are You Sure You Want To Delete This?")
+                        .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                                if (isIncome){
+                                    String income_id = expensesModel.getId();
+                                    deleteIncome(income_id);
+                                } else {
+                                    String expense_id = expensesModel.getId();
+                                    deleteExpense(expense_id);
+                                }
+                            }
+                        }).setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+
+                    }
+                }).create().show();
+            }
+        };
+    }
+
+    private void getItems(){
+
+        StringRequest itemRequest = new StringRequest(Request.Method.GET, Config.GET_ITEMS, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+
+                JSONObject itemObj = null;
+
+                try{
+                    //getting items object from json
+                    itemObj = new JSONObject(response);
+                    //getting items array from json
+                    itemsJsonArry = itemObj.getJSONArray("data");
+
+                    for (int i=0; i<itemsJsonArry.length(); i++){
+
+                        JSONObject items = itemsJsonArry.getJSONObject(i);
+
+                        String item_name = items.getString("item");
+
+                        Log.i("ArchiItemsList", item_name);
+
+                        itemList.add(item_name);
+                    }
+
+
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+
+                Toast.makeText(getApplicationContext(), error.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        }){
+
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Users users = SharedPrefManager.getInstance(getApplicationContext()).getUser();
+                String token_type = users.getToken_type();
+                String access_token = users.getUser_token();
+
+                Log.i("TokenFromModelSummary",token_type+" "+access_token);
+
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("Content-Type", "application/json; charset=UTF-8");
+                params.put("Authorization",token_type+" "+access_token);
+                return params;
+            }
+        };
+        MySingleton.getInstance(this).addToRequestQueue(itemRequest);
+
+    }
+
+    private String getItemId(int position){
+
+        String item_id = "";
+
+        try {
+
+            JSONObject item_idobj = itemsJsonArry.getJSONObject(position);
+            item_id = item_idobj.getString("id");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return item_id;
+    }
+
+
+    //deleting incomes and expense methods.
+    private void deleteIncome(String income_id){
+
+        StringRequest deleteIncomeReq = new StringRequest(Request.Method.GET, Config.DELETE_INCOME+income_id, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+
+                try {
+
+                    JSONObject deleteObj = new JSONObject(response);
+
+                    if (deleteObj.optString("success").equals("1")){
+
+                        String success_messge = deleteObj.getString("message");
+                        Toast.makeText(ProjectDetails.this, success_messge, Toast.LENGTH_SHORT).show();
+                        Log.i("DelIncomeErr",success_messge);
+
+                        getTotalSummary();
+                        getIncomeSummary();
+
+                    }else if (deleteObj.optString("success").equals("0")){
+
+                        String error_messge = deleteObj.getString("message");
+                        Toast.makeText(ProjectDetails.this, error_messge, Toast.LENGTH_SHORT).show();
+                        Log.i("DelIncomeErr",error_messge);
+                    }
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+
+                Toast.makeText(ProjectDetails.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                Log.e("DelIncomeErr", error.getMessage());
+            }
+        }){
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Users users = SharedPrefManager.getInstance(getApplicationContext()).getUser();
+                String token_type = users.getToken_type();
+                String access_token = users.getUser_token();
+
+                Log.i("TokenFromModelSummary",token_type+" "+access_token);
+
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("Authorization",token_type+" "+access_token);
+                return params;
+            }
+        };
+        MySingleton.getInstance(this).addToRequestQueue(deleteIncomeReq);
+
+    }
+
+    private void deleteExpense(String expense_id){
+        mProgressDialog = new ProgressDialog(this);
+        mProgressDialog.setMessage("Deleting Expense");
+        mProgressDialog.setCanceledOnTouchOutside(false);
+        mProgressDialog.show();
+        StringRequest deleteExpenseReq = new StringRequest(Request.Method.GET, Config.DELETE_EXPENSE+expense_id, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+
+                try {
+
+                    JSONObject deleteObj = new JSONObject(response);
+
+                    if (deleteObj.optString("success").equals("1")){
+
+                        String success_messge = deleteObj.getString("message");
+                        Toast.makeText(ProjectDetails.this, success_messge, Toast.LENGTH_SHORT).show();
+                        Log.i("DelIncomeErr",success_messge);
+                        mProgressDialog.dismiss();
+                        getTotalSummary();
+                        getExpenseSummary();
+
+                    }else if (deleteObj.optString("success").equals("0")){
+
+                        String error_messge = deleteObj.getString("message");
+                        Toast.makeText(ProjectDetails.this, error_messge, Toast.LENGTH_SHORT).show();
+                        Log.i("DelExpenseErr",error_messge);
+                    }
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+
+                Toast.makeText(ProjectDetails.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                Log.e("DelExpenseErr", error.getMessage());
+            }
+        }){
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Users users = SharedPrefManager.getInstance(getApplicationContext()).getUser();
+                String token_type = users.getToken_type();
+                String access_token = users.getUser_token();
+
+                Log.i("TokenFromModelSummary",token_type+" "+access_token);
+
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("Authorization",token_type+" "+access_token);
+                return params;
+            }
+        };
+        MySingleton.getInstance(this).addToRequestQueue(deleteExpenseReq);
     }
 
     @Override
     public void onBackPressed() {
         super.onBackPressed();
     }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.projects_details_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        int id = item.getItemId();
+
+        if (id == android.R.id.home){
+
+            finish();
+            super.onBackPressed();
+        }
+
+        if (id == R.id.action_refresh){
+
+            recreate();
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+
 }

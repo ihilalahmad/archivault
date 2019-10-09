@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="350dp"
+    android:layout_height="350dp"
+    android:orientation="vertical"
+    android:background="@drawable/popup_background"
+    android:layout_gravity="center"
+    android:padding="5dp">
+
+    <TextView
+        android:id="@+id/close_popup"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:textColor="@color/color_black"
+        android:text="X"
+        android:textSize="20sp"
+        android:layout_marginTop="5dp"
+        android:layout_marginRight="10dp"
+        android:layout_gravity="end"
+        android:gravity="center"
+        android:background="@drawable/circlebackground"
+        />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/color_black"
+        android:text="Add New Project"
+        android:textStyle="bold"
+        android:textSize="25sp"
+        android:layout_gravity="center"/>
+
+    <EditText
+        android:id="@+id/et_new_project_name"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:hint="Project Name"
+        android:background="@drawable/popup_edittext_bg"
+        android:layout_gravity="center"
+        android:inputType="text"
+        android:layout_marginTop="30dp"/>
+
+    <EditText
+        android:id="@+id/et_new_project_desc"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:hint="Project Description"
+        android:background="@drawable/popup_edittext_bg"
+        android:layout_gravity="center"
+        android:inputType="text"
+        android:layout_marginTop="30dp"/>
+
+    <Button
+        android:id="@+id/btn_add_project"
+        android:layout_width="250dp"
+        android:layout_height="wrap_content"
+        android:text="Add Project"
+        android:background="@drawable/btn_background"
+        android:layout_marginTop="25dp"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:textSize="20sp"
+        android:textColor="@color/color_white"/>
+
+</LinearLayout>

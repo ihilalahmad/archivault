@@ -5,15 +5,28 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.text.TextUtils;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 
 import com.android.volley.AuthFailureError;
+import com.android.volley.NetworkError;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
@@ -31,9 +44,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,12 +58,15 @@ public class MainActivity extends AppCompatActivity implements ItemClickListener
     Context mContext;
     private ProgressDialog mProgressDialog;
 
+    Dialog mDialog;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         mContext = this;
+        mDialog = new Dialog(this);
 
         //checking whether user is logedin or not
         isUserLoggedIn();
@@ -61,7 +75,7 @@ public class MainActivity extends AppCompatActivity implements ItemClickListener
         setToolbar();
 
         projectModelList = new ArrayList<>();
-        addingProjectsToList();
+        getProjects();
 
         mRecyclerView = findViewById(R.id.main_recycleView);
         mRecyclerView.setHasFixedSize(true);
@@ -74,11 +88,13 @@ public class MainActivity extends AppCompatActivity implements ItemClickListener
 
         if (!SharedPrefManager.getInstance(this).isLoggedIn()) {
             finish();
-            startActivity(new Intent(this, LoginActivity.class));
+            Intent intent = new Intent(this,LoginActivity.class);
+            startActivity(intent);
+            finish();
         }
     }
 
-    private void addingProjectsToList(){
+    private void getProjects(){
 
         // Display a progress dialog
         mProgressDialog = new ProgressDialog(this);
@@ -123,8 +139,43 @@ public class MainActivity extends AppCompatActivity implements ItemClickListener
         }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                mProgressDialog.dismiss();
-                Toast.makeText(getApplicationContext(), error.getMessage(), Toast.LENGTH_SHORT).show();
+
+
+                Log.e("ProjectsFetchingErr", error.getMessage());
+
+                if (error instanceof NetworkError) {
+
+                    mProgressDialog.dismiss();
+
+                    new AlertDialog.Builder(MainActivity.this)
+                            .setTitle("No Network Connection")
+                            .setCancelable(true)
+                            .setPositiveButton("Retry", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+
+                                    getProjects();
+                                }
+                            })
+                            .setNegativeButton("Exit", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    finish();
+                                }
+                            })
+                            .setNeutralButton("Report a Problem", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+
+                                    Intent intent = new Intent(Intent.ACTION_SENDTO, Uri.fromParts(
+                                            "mailto", getString(R.string.email), null));
+                                    intent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.app_name));
+                                    intent.putExtra(Intent.EXTRA_TEXT, "");
+                                    startActivity(Intent.createChooser(intent, "Choose an Email client :"));
+
+                                }
+                            }).create().show();
+                }
             }
         }){
             @Override
@@ -161,10 +212,101 @@ public class MainActivity extends AppCompatActivity implements ItemClickListener
         startActivity(i);
     }
 
+    private void openAddNewProjectPopup(){
+
+
+    }
+
+
+    private Boolean exit = false;
 
     @Override
     public void onBackPressed() {
-        super.onBackPressed();
-        finish();
+        if (exit) {
+            finish(); // finish activity
+        } else {
+            Toast.makeText(this, "Press Back again to Exit.",
+                    Toast.LENGTH_SHORT).show();
+            exit = true;
+            new Handler().postDelayed(new Runnable() {
+
+                @Override
+                public void run() {
+                    // TODO Auto-generated method stub
+                    Intent a = new Intent(Intent.ACTION_MAIN);
+                    a.addCategory(Intent.CATEGORY_HOME);
+                    a.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(a);
+                }
+            }, 100);
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.main_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        if (id == R.id.action_logout){
+
+            SharedPrefManager.getInstance(getApplicationContext()).logout();
+        }
+
+        if (id == R.id.action_add_project){
+
+            TextView close_popup;
+            final EditText et_project_name;
+            final EditText et_project_description;
+            Button btn_add_project;
+            mDialog.setContentView(R.layout.add_new_project_popupwindow);
+
+            close_popup = mDialog.findViewById(R.id.close_popup);
+            et_project_name = mDialog.findViewById(R.id.et_new_project_name);
+            et_project_description = mDialog.findViewById(R.id.et_new_project_desc);
+            btn_add_project = mDialog.findViewById(R.id.btn_add_project);
+
+            close_popup.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+
+                    mDialog.dismiss();
+                }
+            });
+
+            btn_add_project.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+
+                    String title = et_project_name.getText().toString();
+                    String amount = et_project_description.getText().toString();
+
+                    if (TextUtils.isEmpty(title)){
+                        et_project_name.setError("Please enter project name");
+                        et_project_name.requestFocus();
+                        return;
+                    }
+                    if (TextUtils.isEmpty(amount)){
+
+                        et_project_description.setError("Please enter project description");
+                        et_project_description.requestFocus();
+                        return;
+                    }
+                }
+            });
+
+            mDialog.setCancelable(false);
+            mDialog.show();
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 }

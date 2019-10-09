@@ -2,7 +2,7 @@ package com.example.archivault.utils;
 
 public class Config {
 
-    public static final String BASE_URL = "https://dev.mraheelkhan.com/archivault/api/";
+    private static final String BASE_URL = "https://dev.mraheelkhan.com/archivault/api/";
 
 
     public static final String LOGIN_URL = BASE_URL +"login";
@@ -12,4 +12,8 @@ public class Config {
     public static final String EXPENSES_URL = BASE_URL +"expenses?project_id=";
     public static final String ADD_NEW_INCOME = BASE_URL +"income/store";
     public static final String ADD_NEW_EXPENSE = BASE_URL +"expense/store";
+    public static final String GET_ITEMS = BASE_URL +"items";
+    public static final String ADD_NEW_ITEM_EXPENSE = BASE_URL +"expensesWithItem";
+    public static final String DELETE_INCOME = BASE_URL +"income/delete?income_id=";
+    public static final String DELETE_EXPENSE = BASE_URL +"expense/delete?expense_id=";
 }

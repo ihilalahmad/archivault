@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="350dp"
+    android:layout_height="400dp"
+    android:layout_gravity="center"
+    android:background="@drawable/popup_background"
+    android:orientation="vertical"
+    android:padding="5dp">
+
+    <TextView
+        android:id="@+id/close_popup"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_gravity="end"
+        android:layout_marginTop="5dp"
+        android:layout_marginRight="10dp"
+        android:background="@drawable/circlebackground"
+        android:gravity="center"
+        android:text="X"
+        android:textColor="@color/color_black"
+        android:textSize="20sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="Add New income"
+        android:textColor="@color/color_black"
+        android:textSize="25sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="Select an item"
+        android:layout_marginTop="15dp"
+        android:textColor="@color/color_black"
+        android:textSize="18sp" />
+
+    <Spinner
+        android:id="@+id/item_expense_spinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <EditText
+        android:id="@+id/et_item_expense_quantity"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="30dp"
+        android:background="@drawable/popup_edittext_bg"
+        android:hint="Enter Quantity"
+        android:inputType="number" />
+
+    <EditText
+        android:id="@+id/et_item_expense_amount"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="30dp"
+        android:background="@drawable/popup_edittext_bg"
+        android:hint="Enter Amount"
+        android:inputType="number" />
+
+    <Button
+        android:id="@+id/btn_add_item_expense"
+        android:layout_width="250dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="25dp"
+        android:background="@drawable/btn_background"
+        android:gravity="center"
+        android:text="Add"
+        android:textColor="@color/color_white"
+        android:textSize="20sp" />
+
+</LinearLayout>

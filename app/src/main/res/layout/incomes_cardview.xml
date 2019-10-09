@@ -14,7 +14,7 @@
         android:padding="2dp">
 
         <TextView
-            android:id="@+id/delete_entry"
+            android:id="@+id/delete_income"
             android:layout_width="30dp"
             android:layout_height="30dp"
             android:textColor="@color/color_black"
@@ -47,7 +47,7 @@
 
 
             <TextView
-                android:id="@+id/tv_summary_title"
+                android:id="@+id/tv_income_summary_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="8dp"
@@ -72,26 +72,16 @@
                     />
 
                 <TextView
-                    android:id="@+id/quantity"
+                    android:id="@+id/tv_income_summary_username"
                     android:layout_toRightOf="@id/dot_1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginLeft="8dp"
-                    android:text="Quantity: "
+                    android:layout_marginLeft="10dp"
+                    android:text="Zulkifal Khan"
                     android:layout_centerInParent="true"
                     android:textColor="@color/color_black"
                     android:textSize="16sp"/>
 
-                <TextView
-                    android:id="@+id/tv_summary_quantity"
-                    android:layout_toRightOf="@id/quantity"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="8dp"
-                    android:text="No Qty"
-                    android:layout_centerInParent="true"
-                    android:textColor="@color/color_black"
-                    android:textSize="16sp"/>
 
             </RelativeLayout>
 
@@ -111,20 +101,10 @@
                     android:tint="@color/colorPrimaryDark"
                     />
 
-                <TextView
-                    android:id="@+id/tv_summary_username"
-                    android:layout_toRightOf="@id/dot_2"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="8dp"
-                    android:text="Zulkifal Khan"
-                    android:layout_centerInParent="true"
-                    android:textColor="@color/color_black"
-                    android:textSize="16sp"/>
 
                 <TextView
-                    android:id="@+id/tv_summary_date"
-                    android:layout_toRightOf="@id/tv_summary_username"
+                    android:id="@+id/tv_income_summary_date"
+                    android:layout_toRightOf="@id/dot_2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginLeft="10dp"
@@ -138,7 +118,7 @@
         </LinearLayout>
 
         <TextView
-            android:id="@+id/tv_summary_total_amount"
+            android:id="@+id/tv_income_summary_total_amount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="15,000"
