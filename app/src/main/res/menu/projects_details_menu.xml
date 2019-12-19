@@ -4,8 +4,16 @@
 
 
     <item
+        android:id="@+id/action_search"
+        android:title="Search"
+        android:icon="@drawable/ic_search"
+        app:showAsAction="ifRoom|collapseActionView"
+        app:actionViewClass="androidx.appcompat.widget.SearchView"/>
+
+    <item
         android:id="@+id/action_refresh"
         android:title="Refresh"
+        android:icon="@drawable/ic_refresh"
         app:showAsAction="collapseActionView|ifRoom"
         />
 

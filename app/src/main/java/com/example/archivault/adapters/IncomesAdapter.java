@@ -4,6 +4,8 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Filter;
+import android.widget.Filterable;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -12,18 +14,21 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.archivault.R;
 import com.example.archivault.model.IncomesModel;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class IncomesAdapter extends RecyclerView.Adapter<IncomesAdapter.ViewHolder> {
+public class IncomesAdapter extends RecyclerView.Adapter<IncomesAdapter.ViewHolder> implements Filterable {
 
     private OnItemClickListener mListener;
     private List<IncomesModel> incomesList;
+    private List<IncomesModel> incomeListFull;
     private Context mContext;
 
     public IncomesAdapter(List<IncomesModel> incomesList, Context mContext ,OnItemClickListener mListener) {
         this.mListener = mListener;
         this.incomesList = incomesList;
         this.mContext = mContext;
+        incomeListFull = new ArrayList<>(incomesList);
     }
 
     @NonNull
@@ -61,6 +66,44 @@ public class IncomesAdapter extends RecyclerView.Adapter<IncomesAdapter.ViewHold
     public int getItemCount() {
         return incomesList.size();
     }
+
+    @Override
+    public Filter getFilter() {
+        return incomeFilter;
+    }
+
+    private Filter incomeFilter = new Filter() {
+        @Override
+        protected FilterResults performFiltering(CharSequence constraint) {
+            List<IncomesModel> filteredList = new ArrayList<>();
+
+            if (constraint == null || constraint.length() == 0){
+                filteredList.addAll(incomeListFull);
+            }else {
+
+                String filterPattern = constraint.toString().toLowerCase().trim();
+
+                for(IncomesModel item : incomeListFull){
+                    if (item.getIncome_reason().toLowerCase().contains(filterPattern)){
+                        filteredList.add(item);
+                    }
+                }
+            }
+
+            FilterResults results = new FilterResults();
+            results.values = filteredList;
+
+            return results;
+        }
+
+        @Override
+        protected void publishResults(CharSequence constraint, FilterResults results) {
+
+            incomesList.clear();
+            incomesList.addAll((List) results.values);
+            notifyDataSetChanged();
+        }
+    };
 
     public class ViewHolder extends RecyclerView.ViewHolder {
 

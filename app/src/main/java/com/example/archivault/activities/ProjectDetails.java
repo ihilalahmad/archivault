@@ -3,6 +3,7 @@ package com.example.archivault.activities;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -18,6 +19,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -49,7 +51,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,7 +84,7 @@ public class ProjectDetails extends AppCompatActivity {
     private JSONArray itemsJsonArry;
 
     RecyclerView mRecyclerView;
-    ExpensesAdapter mAdapter;
+    ExpensesAdapter expensesAdapter;
     IncomesAdapter incomesAdapter;
     Context mContext;
 
@@ -92,7 +97,7 @@ public class ProjectDetails extends AppCompatActivity {
 
     private ExpensesAdapter.OnItemClickListener expenseListener;
     private IncomesAdapter.OnItemClickListener incomesListener;
-    boolean isIncome;
+    boolean isIncome = true;
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
@@ -169,7 +174,7 @@ public class ProjectDetails extends AppCompatActivity {
         toggle_income.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
+                isIncome = true;
                 getIncomeSummary();
 //                initViews();
             }
@@ -177,7 +182,7 @@ public class ProjectDetails extends AppCompatActivity {
         toggle_expense.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
+                isIncome = false;
                 getExpenseSummary();
 //                initViews();
             }
@@ -584,6 +589,7 @@ public class ProjectDetails extends AppCompatActivity {
 
     }
 
+    //getting data from api.
     private void getTotalSummary() {
 
         // Display a progress dialog
@@ -647,7 +653,7 @@ public class ProjectDetails extends AppCompatActivity {
 
         incomesList = new ArrayList<>();
 
-        isIncome = true;
+//        isIncome = true;
         toggle_income.setTextColor(getResources().getColor(R.color.colorPrimaryDark));
         toggle_expense.setTextColor(getResources().getColor(R.color.disable_color));
 
@@ -682,9 +688,19 @@ public class ProjectDetails extends AppCompatActivity {
                        String date = projectsObj.getString("date");
                        String total_amount = projectsObj.getString("amount");
 
-                       Log.i("IncomeSummary", user +" " + total_amount);
+                        //format the date
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+                        Date convertedDate = new Date();
 
-                       IncomesModel incomes = new IncomesModel(id,user,title,date,total_amount);
+                        convertedDate = dateFormat.parse(date);
+                        SimpleDateFormat sdfnewformat = new SimpleDateFormat("dd-MMM-yyyy");
+
+                        String mDateFormated = sdfnewformat.format(convertedDate);
+
+
+                        Log.i("IncomeSummary", user +" " + total_amount);
+
+                       IncomesModel incomes = new IncomesModel(id,user,title,mDateFormated,total_amount);
                        incomesList.add(incomes);
                         mProgressDialog.dismiss();
                     }
@@ -693,6 +709,8 @@ public class ProjectDetails extends AppCompatActivity {
 
                 } catch (JSONException e) {
                     Log.i("IncomeSummaryErr", e.getMessage());
+                } catch (ParseException e) {
+                    e.printStackTrace();
                 }
 
             }
@@ -726,7 +744,7 @@ public class ProjectDetails extends AppCompatActivity {
 
         expensesList = new ArrayList<>();
 
-        isIncome = false;
+//        isIncome = false;
         toggle_expense.setTextColor(getResources().getColor(R.color.colorPrimaryDark));
         toggle_income.setTextColor(getResources().getColor(R.color.disable_color));
 
@@ -768,19 +786,30 @@ public class ProjectDetails extends AppCompatActivity {
                         String total_amount = projectsObj.getString("amount");
                         String quantity = projectsObj.getString("quantity");
 
+                        //format the date
+                        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+                        Date convertedDate = new Date();
+
+                        convertedDate = dateFormat.parse(date);
+                        SimpleDateFormat sdfnewformat = new SimpleDateFormat("dd-MMM-yyyy");
+
+                        String mDateFormated = sdfnewformat.format(convertedDate);
+
                         Log.i("ExpenseSummary", user +" " + title + " "+ total_amount);
 
-                        ExpensesModel expensesModel = new ExpensesModel(id,title,user,date,total_amount, quantity);
+                        ExpensesModel expensesModel = new ExpensesModel(id,title,user,mDateFormated,total_amount, quantity);
                         expensesList.add(expensesModel);
 
                         mProgressDialog.dismiss();
 
                     }
-                    mAdapter = new ExpensesAdapter(expensesList, mContext, expenseListener);
-                    mRecyclerView.setAdapter(mAdapter);
+                    expensesAdapter = new ExpensesAdapter(expensesList, mContext, expenseListener);
+                    mRecyclerView.setAdapter(expensesAdapter);
 
 
                 } catch (JSONException e) {
+                    e.printStackTrace();
+                } catch (ParseException e) {
                     e.printStackTrace();
                 }
 
@@ -1036,6 +1065,31 @@ public class ProjectDetails extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.projects_details_menu, menu);
+
+        MenuItem search = menu.findItem(R.id.action_search);
+        SearchView searchView = (SearchView) search.getActionView();
+        searchView.setImeOptions(EditorInfo.IME_ACTION_DONE);
+
+
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                if (!isIncome){
+
+                    expensesAdapter.getFilter().filter(newText);
+                }else {
+
+                    incomesAdapter.getFilter().filter(newText);
+                }
+                return false;
+            }
+        });
+
         return true;
     }
 

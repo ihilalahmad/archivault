@@ -4,6 +4,8 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Filter;
+import android.widget.Filterable;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -13,20 +15,23 @@ import com.example.archivault.R;
 import com.example.archivault.model.ExpensesModel;
 
 
+import java.util.ArrayList;
 import java.util.List;
 
 
-public class ExpensesAdapter extends RecyclerView.Adapter<ExpensesAdapter.ViewHolder> {
+public class ExpensesAdapter extends RecyclerView.Adapter<ExpensesAdapter.ViewHolder> implements Filterable {
 
 
    private OnItemClickListener mListener;
    private List<ExpensesModel> expensesList;
+   private List<ExpensesModel> expenseListFull;
    private Context mContext;
 
     public ExpensesAdapter(List<ExpensesModel> expensesList, Context mContext, OnItemClickListener mListener) {
         this.expensesList = expensesList;
         this.mContext = mContext;
         this.mListener = mListener;
+        expenseListFull = new ArrayList<>(expensesList);
     }
 
 
@@ -37,6 +42,7 @@ public class ExpensesAdapter extends RecyclerView.Adapter<ExpensesAdapter.ViewHo
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.project_summary_cardview,parent,false);
         return new ViewHolder(view);
     }
+
 
     public interface OnItemClickListener {
         void onItemClick(ExpensesModel expensesModel);
@@ -72,6 +78,43 @@ public class ExpensesAdapter extends RecyclerView.Adapter<ExpensesAdapter.ViewHo
     public int getItemCount() {
         return expensesList.size();
     }
+
+    @Override
+    public Filter getFilter() {
+        return expenseFilter;
+    }
+
+    private Filter expenseFilter = new Filter() {
+        @Override
+        protected FilterResults performFiltering(CharSequence constraint) {
+            List<ExpensesModel> filteredList = new ArrayList<>();
+
+            if (constraint == null || constraint.length() == 0){
+                filteredList.addAll(expenseListFull);
+            }else {
+
+                String filterPattern = constraint.toString().toLowerCase().trim();
+
+                for (ExpensesModel expensesModel : expenseListFull){
+                    if (expensesModel.getTitle_summary().toLowerCase().contains(filterPattern)){
+                        filteredList.add(expensesModel);
+                    }
+                }
+            }
+
+            FilterResults results = new FilterResults();
+            results.values = filteredList;
+
+            return results;
+        }
+
+        @Override
+        protected void publishResults(CharSequence constraint, FilterResults results) {
+            expensesList.clear();
+            expensesList.addAll((List) results.values);
+            notifyDataSetChanged();
+        }
+    };
 
     class ViewHolder extends RecyclerView.ViewHolder {
 
