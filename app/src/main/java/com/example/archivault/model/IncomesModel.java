@@ -18,6 +18,7 @@ public class IncomesModel {
         this.total_amount = total_amount;
     }
 
+
     public String getIncome_id() {
         return income_id;
     }

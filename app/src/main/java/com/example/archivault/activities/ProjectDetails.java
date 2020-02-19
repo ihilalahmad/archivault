@@ -316,6 +316,7 @@ public class ProjectDetails extends AppCompatActivity {
         TextView close_popup;
         Spinner item_expense_spinner;
         final EditText et_amount;
+        final EditText et_title;
         final EditText et_item_quantity;
         Button btn_add_item_expense;
         mDialog.setContentView(R.layout.add_item_expense_popupwindow);
@@ -325,6 +326,7 @@ public class ProjectDetails extends AppCompatActivity {
         et_amount = mDialog.findViewById(R.id.et_item_expense_amount);
         et_item_quantity = mDialog.findViewById(R.id.et_item_expense_quantity);
         btn_add_item_expense = mDialog.findViewById(R.id.btn_add_item_expense);
+        et_title = mDialog.findViewById(R.id.et_item_comment_title);
 
         close_popup.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -358,6 +360,7 @@ public class ProjectDetails extends AppCompatActivity {
 
                 String id = item_id.get(0);
                 String amount = et_amount.getText().toString();
+                String title = et_title.getText().toString();
                 String item_quantity = et_item_quantity.getText().toString();
                 Log.i("ArchiItemClickon", id);
 
@@ -376,7 +379,7 @@ public class ProjectDetails extends AppCompatActivity {
                     return;
                 }
 
-                addNewItemExpense(amount,project_id,id,item_quantity);
+                addNewItemCommentExpense(amount, title, project_id,id,item_quantity);
             }
         });
 
@@ -578,6 +581,76 @@ public class ProjectDetails extends AppCompatActivity {
             protected Map<String, String> getParams() throws AuthFailureError {
                 Map<String, String> params = new HashMap<String, String>();
                 params.put("amount", amount);
+                params.put("project_id", projectId);
+                params.put("item_id", itemId);
+                params.put("quantity", item_quantity);
+
+                return params;
+            }
+        };
+        MySingleton.getInstance(this).addToRequestQueue(addNewItemExpense);
+
+    }
+
+    private void addNewItemCommentExpense(final String amount, final String title, final String projectId, final String itemId, final String item_quantity){
+
+        StringRequest addNewItemExpense = new StringRequest(Request.Method.POST, Config.ADD_NEW_ITEM_COMMENT_EXPENSE, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+
+                Log.i("Check", response);
+
+                try {
+
+                    JSONObject obj = new JSONObject(response);
+
+                    if (obj.optString("success").equals("1")){
+
+                        String success_messge = obj.getString("message");
+                        Toast.makeText(ProjectDetails.this, success_messge, Toast.LENGTH_SHORT).show();
+                        Log.i("SSARegRes",success_messge);
+                        getTotalSummary();
+                        getExpenseSummary();
+                        mDialog.dismiss();
+
+                    }else if (obj.optString("success").equals("0")){
+
+                        String error_messge = obj.getString("message");
+                        Toast.makeText(ProjectDetails.this, error_messge, Toast.LENGTH_SHORT).show();
+                        Log.i("SSARegResErr",error_messge);
+                    }
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Toast.makeText(ProjectDetails.this, error.getMessage(), Toast.LENGTH_SHORT).show();
+                Log.e("SSA SignUp ERR", error.getMessage());
+            }
+        }){
+
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                Users users = SharedPrefManager.getInstance(getApplicationContext()).getUser();
+                String token_type = users.getToken_type();
+                String access_token = users.getUser_token();
+
+                Log.i("TokenFromModelSummary",token_type+" "+access_token);
+
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("Authorization",token_type+" "+access_token);
+                return params;
+            }
+
+            @Override
+            protected Map<String, String> getParams() throws AuthFailureError {
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("amount", amount);
+                params.put("comment", title);
                 params.put("project_id", projectId);
                 params.put("item_id", itemId);
                 params.put("quantity", item_quantity);

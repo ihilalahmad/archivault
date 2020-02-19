@@ -1,6 +1,7 @@
 package com.example.archivault.adapters;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -54,8 +55,9 @@ public class IncomesAdapter extends RecyclerView.Adapter<IncomesAdapter.ViewHold
 
         holder.delete_entry.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
+            public void onClick(View view) {
 
+                Log.i("OnClickTest", incomesList.get(position).toString());
                 mListener.onItemClick(incomesList.get(position));
             }
         });

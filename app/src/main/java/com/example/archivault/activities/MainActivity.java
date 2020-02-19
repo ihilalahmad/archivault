@@ -31,6 +31,7 @@ import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
+import com.example.archivault.BuildConfig;
 import com.example.archivault.R;
 import com.example.archivault.adapters.ProjectsAdapter;
 import com.example.archivault.interfaces.ItemClickListener;
@@ -60,6 +61,7 @@ public class MainActivity extends AppCompatActivity implements ItemClickListener
 
     Dialog mDialog;
 
+    TextView tv_show_app_version;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -68,6 +70,10 @@ public class MainActivity extends AppCompatActivity implements ItemClickListener
         mContext = this;
         mDialog = new Dialog(this);
 
+        // displaying app version
+        tv_show_app_version = findViewById(R.id.tv_show_app_version);
+        String versionName = BuildConfig.VERSION_NAME;
+        tv_show_app_version.setText("v" + versionName);
         //checking whether user is logedin or not
         isUserLoggedIn();
 

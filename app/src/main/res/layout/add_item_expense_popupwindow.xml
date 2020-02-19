@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="350dp"
-    android:layout_height="400dp"
+    android:layout_height="500dp"
     android:layout_gravity="center"
     android:background="@drawable/popup_background"
     android:orientation="vertical"
@@ -41,7 +41,11 @@
     <Spinner
         android:id="@+id/item_expense_spinner"
         android:layout_width="match_parent"
+        android:layout_marginLeft="20dp"
+        android:background="@drawable/dropdown_bg"
+        android:layout_marginRight="20dp"
         android:layout_height="wrap_content"/>
+
 
     <EditText
         android:id="@+id/et_item_expense_quantity"
@@ -52,6 +56,14 @@
         android:background="@drawable/popup_edittext_bg"
         android:hint="Enter Quantity"
         android:inputType="number" />
+    <EditText
+        android:id="@+id/et_item_comment_title"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="30dp"
+        android:background="@drawable/popup_edittext_bg"
+        android:hint="Enter Reason/Comment" />
 
     <EditText
         android:id="@+id/et_item_expense_amount"
