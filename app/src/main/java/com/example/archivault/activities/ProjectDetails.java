@@ -105,7 +105,6 @@ public class ProjectDetails extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_project_details);
 
-
         mContext = this;
 
         toolbar = findViewById(R.id.project_details_toolbar);
@@ -336,7 +335,7 @@ public class ProjectDetails extends AppCompatActivity {
             }
         });
 
-       final List<String> item_id = new ArrayList<>();
+        final List<String> item_id = new ArrayList<>();
 
         item_expense_spinner.setAdapter(new ArrayAdapter<>(ProjectDetails.this, android.R.layout.simple_spinner_dropdown_item, itemList));
 
@@ -368,14 +367,12 @@ public class ProjectDetails extends AppCompatActivity {
 
                     et_item_quantity.setError("Please enter quantity");
                     et_item_quantity.requestFocus();
-
                     return;
                 }
 
                 if (TextUtils.isEmpty(amount)){
                     et_amount.setError("Please enter reason");
                     et_amount.requestFocus();
-
                     return;
                 }
 
@@ -1012,7 +1009,6 @@ public class ProjectDetails extends AppCompatActivity {
         }
         return item_id;
     }
-
 
     //deleting incomes and expense methods.
     private void deleteIncome(String income_id){
